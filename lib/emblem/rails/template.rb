@@ -9,22 +9,11 @@ module Emblem
 
       def evaluate(scope, locals, &block)
         target = global_template_target(scope)
-        raw = raw?(scope)
-
-        template = data
 
         if configuration.precompile
-          if raw
-            template = precompile_emblem(template)
-          else
-            template = precompile_ember_emblem(template)
-          end
+          template = precompile_emblem(data)
         else
-          if raw
-            template = compile_emblem(data)
-          else
-            template = compile_ember_emblem(template)
-          end
+          template = compile_emblem(data)
         end
 
         "#{target} = #{template}\n"
@@ -32,8 +21,8 @@ module Emblem
 
       private
 
-      def raw?(scope)
-        scope.pathname.to_s =~ /\.raw\.(emblem)/
+      def global_template_target(scope)
+        "JST[#{template_path(scope.logical_path).inspect}]"
       end
 
       def compile_emblem(string)
@@ -42,14 +31,6 @@ module Emblem
 
       def precompile_emblem(string)
         Barber::Emblem::FilePrecompiler.call(string)
-      end
-
-      def compile_ember_emblem(string)
-        "Emblem.compile(Ember.Handlebars, #{indent(string).inspect});"
-      end
-
-      def precompile_ember_emblem(string)
-        Barber::Emblem::EmberFilePrecompiler.call(string)
       end
     end
   end
