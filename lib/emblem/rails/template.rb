@@ -8,18 +8,28 @@ module Emblem
     class Template < Ember::Handlebars::Template
 
       def evaluate(scope, locals, &block)
-        target = global_template_target(scope)
-
         if configuration.precompile
           template = precompile_emblem(data)
         else
           template = compile_emblem(data)
         end
 
-        "#{target} = #{template}\n"
+        if configuration.output_type == :amd
+          target = amd_template_target(scope)
+
+          "define('#{target}', ['handlebars.runtime'], function(Handlebars){ Handlebars = Handlebars['default']; return #{template} });"
+        else
+          target = global_template_target(scope)
+
+          "#{target} = #{template}\n"
+        end
       end
 
       private
+
+      def amd_template_target(scope)
+        "#{scope.logical_path.split(".").first}"
+      end
 
       def global_template_target(scope)
         "JST[#{template_path(scope.logical_path).inspect}]"
