@@ -1,11 +1,15 @@
 require 'sprockets'
 require 'sprockets/engines'
-require 'ember/handlebars/template'
 require 'barber-emblem'
 
 module Emblem
   module Rails
-    class Template < Ember::Handlebars::Template
+    class Template < Tilt::Template
+      def self.default_mime_type
+        'application/javascript'
+      end
+
+      def prepare; end
 
       def evaluate(scope, locals, &block)
         if configuration.precompile
@@ -41,6 +45,28 @@ module Emblem
 
       def precompile_emblem(string)
         Barber::Emblem::FilePrecompiler.call(string)
+      end
+
+      def configuration
+        ::Rails.configuration.emblem
+      end
+
+      def template_path(path)
+        root = configuration.templates_root
+
+        if root.kind_of? Array
+          root.each do |root|
+            path.sub!(/#{Regexp.quote(root)}\//, '')
+          end
+        else
+          unless root.empty?
+            path.sub!(/#{Regexp.quote(root)}\/?/, '')
+          end
+        end
+
+        path = path.split('/')
+
+        path.join(configuration.templates_path_separator)
       end
     end
   end
